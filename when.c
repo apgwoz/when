@@ -251,6 +251,7 @@ run_zero()
           current_state = WAITING;
         }
       }
+      break;
     case WAITING:
       /* sleep, hoping that we get some progress */
       msleep(10);
