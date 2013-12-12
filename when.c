@@ -84,6 +84,7 @@ timebomb_handler(int signum)
 static void
 zero_handler(int signum)
 {
+
   if (signum == SIGINT) {
     current_state = CANCELLED;
   }
@@ -161,7 +162,7 @@ finish()
 {
   sigset_t oset;
   pid_t finished_chld;
-  int chld_status;
+  int chld_status, chld_success;
 
   if (current_state == ALARM || current_state == FINISHED) {
     finished_chld = fork();
@@ -188,20 +189,29 @@ finish()
        * command.
        */
 
+      chld_success = 0;
       VERBOSE("INFO: ignoring sigchld for finish\n");
       if (sigprocmask(SIG_SETMASK, NULL, &oset) == 0) {
         sigaddset(&oset, SIGCHLD);
         sigprocmask(SIG_BLOCK, &oset, NULL);
       }
 
-      if (waitpid(wait_for, &chld_status, 0) < 0) {
-        if (errno == ECHILD) {
-          _exit(EXIT_SUCCESS);
+      while((finished_chld = waitpid(-1, &chld_status, 0)) >= 0) {
+        VERBOSE("INFO: child %d exited with code %d\n", finished_chld, chld_status);
+        if(chld_status != 0) {
+          chld_success = WEXITSTATUS(chld_status);
         }
       }
-      else {
-        _exit(chld_status);
+
+      if (errno == EINTR) {
+        _exit(EXIT_FAILURE);
       }
+
+      if (errno == ECHILD && !chld_success) {
+        _exit(EXIT_SUCCESS);
+      }
+
+      _exit(chld_success);
     }
   }
 }
