@@ -242,7 +242,7 @@ run_zero()
             current_state = FINISHED;
           }
           else {
-            VERBOSE("INFO: > 0 exit code, WAITING for restart...\n");
+            VERBOSE("INFO: exit code %d, WAITING for restart...\n", status);
             current_state = WAITING;
           }
         }
